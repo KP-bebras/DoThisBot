@@ -50,9 +50,10 @@ async function botLogger(type, msg)
                 .toLocaleString("UA", {timeZone: "Europe/Kiev"}))
                 .toLocaleTimeString();
 
-  const logInformation = `Time: ${logTime} \nType: ${type} \nInformation: ${msg}`;
+  const logInformation = `***Time***: ${logTime} \n***Type***: ${type} \n***Information***: ${msg}`;
+  const parse_mode = 'Markdown';
   config.admin_ids.forEach(admin_id =>{
-    bot.sendMessage(admin_id, logInformation);
+    bot.sendMessage(admin_id, logInformation, { parse_mode });
   });
 }
 
