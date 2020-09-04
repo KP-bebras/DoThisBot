@@ -57,8 +57,6 @@ async function botLogger(type, msg)
   });
 }
 
-botLogger('test2', 'sosite');
-
 bot.onText(/\/remind (.+)/, (msg, match) => {
   const userId = msg.from.id;
   const task  = match[1];
