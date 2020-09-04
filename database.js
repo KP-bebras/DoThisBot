@@ -4,7 +4,11 @@ const Schema = mongoose.Schema;
 const userSchema = new Schema({
     user_id: Number,
     is_working: Boolean,
-    task: String
+    task: String,
+    timer: {
+        timerSet: Date,
+        minutes: Number
+    }
 })
 const UserModel = mongoose.model("User", userSchema);
 

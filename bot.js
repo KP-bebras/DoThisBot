@@ -77,6 +77,13 @@ bot.onText(/\/suggest (.+)/, (msg, match) => {
 
 })
 
+bot.onText(/\/timer ([0-9]+) (.+)/, (msg, match) => {
+  const time = match[1];
+  const task = match[2];
+
+
+})
+
 bot.onText(/\/pullAnAndrey/, msg => {
   if (msg.from.id === config.admin_id) bot.leaveChat(msg.chat.id);
 })
