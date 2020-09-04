@@ -1,0 +1,12 @@
+{
+  "name": "DoThisBot",
+  "version": "1.0.0",
+  "dependencies": {
+    "mongoose": "^5.10.3",
+    "node-telegram-bot-api": "^0.50.0",
+    "nodejs": "0.0.0"
+  },
+  "devDependencies": {
+    "mongodb": "^3.6.1"
+  }
+}
