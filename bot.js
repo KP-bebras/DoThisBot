@@ -41,6 +41,23 @@ async function setUserWorking(msg, userId, isWorking, task) {
       })
 }
 
+// @params type: information type; msg: any information from the bot
+// Sends information about errors or other messages from the bot to admins
+// @return none
+async function botLogger(type, msg)
+{
+  const logTime = new Date(new Date()
+                .toLocaleString("UA", {timeZone: "Europe/Kiev"}))
+                .toLocaleTimeString();
+
+  const logInformation = `Time: ${logTime} \nType: ${type} \nInformation: ${msg}`;
+  config.admin_ids.forEach(admin_id =>{
+    bot.sendMessage(admin_id, logInformation);
+  });
+}
+
+botLogger('test', 'alo');
+
 bot.onText(/\/remind (.+)/, (msg, match) => {
   const userId = msg.from.id;
   const task  = match[1];
@@ -78,5 +95,5 @@ bot.onText(/\/suggest (.+)/, (msg, match) => {
 })
 
 bot.onText(/\/pullAnAndrey/, msg => {
-  if (msg.from.id === config.admin_id) bot.leaveChat(msg.chat.id);
+  if (msg.from.id === config.admin_ids[0]) bot.leaveChat(msg.chat.id);
 })
