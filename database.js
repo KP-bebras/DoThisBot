@@ -12,15 +12,26 @@ const userSchema = new Schema({
 })
 const UserModel = mongoose.model("User", userSchema);
 
+const Utils = require('./utils');
 
+/** Class for working with the User model in the database */
 class User {
+    /**
+     * add() add new User Entity to database
+     * @param  {String}  task      [???]
+     * @param  {Boolean} isWorking [???]
+     * @param  {Number}  user_id   [user id]
+     * @return {Error}             [returns an error if it happened]
+    */
     static async add(id, isWorking = false, task = "") {
         try {
             const savedUser = await new UserModel({user_id: id, is_working: isWorking, task: task}).save();
             console.log("SAVED", savedUser);
         } catch (err) {
-            console.log("DATABASE ERROR: User.add() failed -- database.js 23");
-            console.log(err);
+            console.log("DATABASE ERROR: User.add() failed -- ",
+                         Utils.getFile(), 
+                         Utils.getLine());
+            return err;
         }
     }
 
@@ -29,7 +40,10 @@ class User {
             return await UserModel.findOne({user_id: userId});
         }
         catch (err) {
-            console.log("DATABASE ERROR: User.find() failed -- database.js 29");
+            console.log("DATABASE ERROR: User.find() failed -- ", 
+                         Utils.getFile(), 
+                         Utils.getLine());
+            return err;
         }
     }
 
@@ -38,7 +52,10 @@ class User {
             return await UserModel.updateOne({user_id: userId}, {is_working: isWorking, task: task})
         }
         catch (err) {
-            console.log("DATABASE ERROR: User.update() failed -- database.js 37");
+            console.log("DATABASE ERROR: User.update() failed -- ", 
+                         Utils.getFile(), 
+                         Utils.getLine());
+            return err;
         }
 
     }
