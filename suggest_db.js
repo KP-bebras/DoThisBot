@@ -16,9 +16,20 @@ class Suggest {
             const savedSuggest = await new SuggestModel({suggest_text: text, 
                                                          author_id: user_id,
                                                          author_name: first_name}).save();
-            console.log("PUSHED ", savedUser);
         } catch (err) {
-            console.log("DATABASE ERROR: User.push() failed -- ", 
+            console.log("DATABASE ERROR: Suggest.push() failed -- ", 
+                         Utils.getFile(), 
+                         Utils.getLine());
+            throw new Error(err);
+        }
+    }
+
+    static async getAllEntities() {
+        try {
+            return await SuggestModel.find({});
+        }
+        catch (err) {
+            console.log("DATABASE ERROR: Suggest.getAllEntities() failed -- ", 
                          Utils.getFile(), 
                          Utils.getLine());
             throw new Error(err);

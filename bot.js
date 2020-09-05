@@ -61,6 +61,18 @@ async function botLogger(type, msg)
   });
 }
 
+//helper functions
+/** Сhecks if there is an ID in the admin config
+ * 
+ * @param {Number} user_id [user_id]
+ * @return {Boolean} check result
+ */
+function checkIfAdmin(user_id)
+{
+  if (config.admin_ids.includes(String(user_id))) return true;
+  else return false;
+}
+
 bot.onText(/\/remind (.+)/, (msg, match) => {
   const userId = msg.from.id;
   const task  = match[1];
@@ -97,12 +109,51 @@ bot.onText(/\/suggest (.+)/, (msg, match) => {
   Suggest.push(suggestion, msg.from.id, msg.from.first_name)
          .then(() => {
             bot.deleteMessage(msg.chat.id, msg.message_id);
-            bot.sendMessage(msg.chat.id, 'jdhk');
+
+            const user_name = `[${String(msg.from.first_name)
+              .replace(/]/g,' ')
+              .replace(/\[/g,' ')}](tg://user?id=${msg.from.id})`;
+            const parse_mode = 'Markdown';
+
+            bot.sendMessage(msg.chat.id, user_name + ', "' + suggestion + '" отправлен на рассмотрение', {parse_mode});
          })
          .catch(err => {
-    botLogger('Error', err.message);
-  });
+            botLogger('Error', err.message);
+         });
+});
 
+bot.onText(/\/checkSuggestions/, (msg) => {
+  if (checkIfAdmin(msg.from.id))
+  {
+    Suggest.getAllEntities()
+      .then((suggestions) => {
+
+        suggestions.forEach(suggestObject =>
+        {
+          const buttons = {
+            "reply_markup": {
+                "inline_keyboard": [
+                [
+                  {
+                      text: "+",
+                      callback_data: "+",
+                  },
+                  {
+                      text: "-",
+                      callback_data: "-",
+                  }
+                ]
+              ],
+            },
+          };
+
+          bot.sendMessage(msg.chat.id, suggestObject.suggest_text, buttons);
+        });
+    })
+      .catch(err => {
+        botLogger('Error', err.message);
+    });
+  }
 });
 
 bot.onText(/\/timer ([0-9]+) (.+)/, (msg, match) => {
