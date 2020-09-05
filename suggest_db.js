@@ -21,7 +21,7 @@ class Suggest {
             console.log("DATABASE ERROR: User.push() failed -- ", 
                          Utils.getFile(), 
                          Utils.getLine());
-            return err;
+            throw new Error(err);
         }
     }
 }

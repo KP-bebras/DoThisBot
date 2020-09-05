@@ -10,6 +10,7 @@ mongoose.connect(`mongodb+srv://bot:${config.db_password}@cluster1.hn9fy.mongodb
 
 
 const User = require('./database');
+const Suggest = require('./suggest_db');
 const bot = new TelegramBot(config.token, {polling: true});
 
 
@@ -90,8 +91,16 @@ bot.onText(/(.+)/, (msg, match) => {
 
 bot.onText(/\/suggest (.+)/, (msg, match) => {
   const suggestion = match[1];
+  Suggest.push(suggestion, msg.from.id, msg.from.first_name)
+         .then(() => {
+            bot.deleteMessage(msg.chat.id, msg.message_id);
+            bot.sendMessage(msg.chat.id, 'jdhk');
+         })
+         .catch(err => {
+    botLogger('Error', err.message);
+  });
 
-})
+});
 
 bot.onText(/\/pullAnAndrey/, msg => {
   if (msg.from.id === config.admin_ids[0]) bot.leaveChat(msg.chat.id);
