@@ -18,20 +18,19 @@ const Utils = require('./utils');
 class User {
     /**
      * add() add new User Entity to database
-     * @param  {String}  task      [???]
-     * @param  {Boolean} isWorking [???]
+     * @param  {String}  task      [task user is working on]
+     * @param  {Boolean} isWorking [if user is working]
      * @param  {Number}  user_id   [user id]
      * @return {Error}             [returns an error if it happened]
     */
-    static async add(id, isWorking = false, task = "") {
+    static async add(user_id, isWorking = false, task = "") {
         try {
             const savedUser = await new UserModel({user_id: id, is_working: isWorking, task: task}).save();
-            console.log("SAVED", savedUser);
         } catch (err) {
             console.log("DATABASE ERROR: User.add() failed -- ",
-                         Utils.getFile(), 
+                         Utils.getFile(),
                          Utils.getLine());
-            return err;
+            throw new Error(err);
         }
     }
 
@@ -43,7 +42,7 @@ class User {
             console.log("DATABASE ERROR: User.find() failed -- ", 
                          Utils.getFile(), 
                          Utils.getLine());
-            return err;
+            throw new Error(err);
         }
     }
 
@@ -55,7 +54,7 @@ class User {
             console.log("DATABASE ERROR: User.update() failed -- ", 
                          Utils.getFile(), 
                          Utils.getLine());
-            return err;
+            throw new Error(err.message);
         }
 
     }

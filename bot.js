@@ -17,7 +17,8 @@ const bot = new TelegramBot(config.token, {polling: true});
 // Finds user in the database
 // @return {is_working, task}
 async function findUserIsWorkingAndTask(userId) {
-  const user = await User.find(userId);
+  const user = await User.find(userId)
+      .catch(err => botLogger('Error', err.message));
   if (user) return { working: user.is_working, task: user.task};
   return {working: false, task: ""};
 }
@@ -29,12 +30,14 @@ async function setUserWorking(msg, userId, isWorking, task) {
   User.find(userId)
       .then(user => {
         if (user) {
-          User.update(userId, isWorking, task);
+          User.update(userId, isWorking, task)
+              .catch(err => botLogger('Error', err.message));
           isWorking ? bot.sendMessage(msg.chat.id, 'Окей, давай по новой', {reply_to_message_id: msg.message_id})
               : bot.sendMessage(msg.chat.id, 'Ну и не делай ничего', {reply_to_message_id: msg.message_id});
         }
         else {
-          User.add(userId, isWorking, task);
+          User.add(userId, isWorking, task)
+              .catch(err => botLogger('Error', err.message));
           isWorking ? bot.sendMessage(msg.chat.id, 'Теперь иди ебашь, а то буду доставать', {reply_to_message_id: msg.message_id})
               : bot.sendMessage(msg.chat.id, 'Ты и так ничо не делал', {reply_to_message_id: msg.message_id});
         }
