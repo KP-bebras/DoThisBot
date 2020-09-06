@@ -93,6 +93,8 @@ bot.onText(/\/dick/, msg => {
 
 bot.onText(/(.+)/, (msg, match) => {
   const userId = msg.from.id;
+  const username = msg.from.first_name;
+
   const message = match[1];
   if (message.includes('/remind')) return;
   if (message.includes('/stop')) return;
@@ -100,7 +102,19 @@ bot.onText(/(.+)/, (msg, match) => {
   findUserIsWorkingAndTask(userId).then( check => {
     const {working, task} = check;
     if (working) {
-      bot.sendMessage(msg.chat.id, `Ало блять, иди работай, у тебя тут задача: ${task}`, {reply_to_message_id: msg.message_id})
+      Phrase.getRandomPhrase()
+          .then(phrase => {
+
+              const name = `[${String(username)
+                  .replace(/]/g,' ')
+                  .replace(/\[/g,' ')}](tg://user?id=${userId})`;
+              const parse_mode = 'Markdown';
+
+              let phraseTmpl = eval('`'+ phrase[0].text.replace(/`/g,'\\`') +'`');
+
+              bot.sendMessage(msg.chat.id, phraseTmpl, {parse_mode});
+          })
+          .catch(err => botLogger('Error', err.message));
     }
   })
 });
@@ -119,7 +133,7 @@ bot.on("callback_query", (callbackQuery) => {
       {
         Suggest.getRangeOfEntities(Number(params[1]), 5)
         .then((suggestions) => {
-          if (suggestions.length != 0)
+          if (suggestions.length !== 0)
           {
             sendSuggestionsKeyboard(suggestions, 
                                     msg.chat.id, 
