@@ -25,7 +25,7 @@ class User {
     */
     static async add(user_id, isWorking = false, task = "") {
         try {
-            const savedUser = await new UserModel({user_id: id, is_working: isWorking, task: task}).save();
+            const savedUser = await new UserModel({user_id: user_id, is_working: isWorking, task: task}).save();
         } catch (err) {
             console.log("DATABASE ERROR: User.add() failed -- ",
                          Utils.getFile(),

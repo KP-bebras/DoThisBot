@@ -10,6 +10,7 @@ mongoose.connect(`mongodb+srv://bot:${config.db_password}@cluster1.hn9fy.mongodb
 
 
 const User = require('./database');
+const Suggest = require('./suggest_db');
 const bot = new TelegramBot(config.token, {polling: true});
 
 
@@ -60,6 +61,18 @@ async function botLogger(type, msg)
   });
 }
 
+//helper functions
+/** Сhecks if there is an ID in the admin config
+ * 
+ * @param {Number} user_id [user_id]
+ * @return {Boolean} check result
+ */
+function checkIfAdmin(user_id)
+{
+  if (config.admin_ids.includes(String(user_id))) return true;
+  else return false;
+}
+
 bot.onText(/\/remind (.+)/, (msg, match) => {
   const userId = msg.from.id;
   const task  = match[1];
@@ -91,10 +104,155 @@ bot.onText(/(.+)/, (msg, match) => {
   })
 });
 
+
+bot.on("callback_query", (callbackQuery) => {
+  bot.answerCallbackQuery(callbackQuery.id).then(() => {
+    const msg = callbackQuery.message;
+
+    //suggest block
+    if(callbackQuery.data.startsWith('sug'))
+    {
+      const params = callbackQuery.data.split('|');
+
+      if (params[0] === 'sug_last')
+      {
+        Suggest.getRangeOfEntities(Number(params[1]), 5)
+        .then((suggestions) => {
+          if (suggestions.length != 0)
+          {
+            sendSuggestionsKeyboard(suggestions, 
+                                    msg.chat.id, 
+                                    Number(params[1]) + 5);
+          }
+        })
+        .catch(err => {
+          botLogger('Error', err.message);
+        });
+        bot.deleteMessage(msg.chat.id, msg.message_id);
+      }
+
+      if(params[0] === 'sug')
+      {
+        if (params[2] === '+')
+        {
+          Suggest.getEntityById(params[1])
+            .then((suggestion) => {
+              //push text to DB
+              console.log(suggestion.suggest_text, " ", "одобрен");
+
+              const name = `[${String(suggestion.author_name)
+                .replace(/]/g,' ')
+                .replace(/\[/g,' ')}](tg://user?id=${suggestion.author_id})`;
+              const parse_mode = 'Markdown';
+
+              bot.sendMessage(suggestion.chat_id, "\"" + suggestion.suggest_text + "\"" +
+                                                 + " от " + name +" был одобрен.", {parse_mode});
+
+              Suggest.deleteEntityById(params[1]).catch(err => {botLogger('Error', err.message);});
+              bot.deleteMessage(msg.chat.id, msg.message_id);
+            })
+            .catch(err => {
+              botLogger('Error', err.message);
+            });
+        }
+        else
+        {
+          Suggest.deleteEntityById(params[1]);
+          bot.deleteMessage(msg.chat.id, msg.message_id);
+        }
+      }
+    }
+    //end og suggest block
+
+  });
+});
+
+
 bot.onText(/\/suggest (.+)/, (msg, match) => {
   const suggestion = match[1];
+  Suggest.push(suggestion, msg.from.id, msg.from.first_name, msg.chat.id)
+         .then(() => {
+            bot.deleteMessage(msg.chat.id, msg.message_id);
 
-})
+            const user_name = `[${String(msg.from.first_name)
+              .replace(/]/g,' ')
+              .replace(/\[/g,' ')}](tg://user?id=${msg.from.id})`;
+            const parse_mode = 'Markdown';
+
+            bot.sendMessage(msg.chat.id, user_name + ', "' + suggestion + '" отправлен на рассмотрение', {parse_mode});
+         })
+         .catch(err => {
+            botLogger('Error', err.message);
+         });
+});
+
+/** Send to admin inline keyboard
+ * 
+ * @param {Array} suggestArray [array of suggest]
+ * @param {Number} chat_id [chat id]
+ * @returns {None}
+ */
+async function sendSuggestionsKeyboard(suggestArray, chat_id, callbackLastIndex)
+{
+  // main keyboard
+  for (let suggestObject of suggestArray)
+  {
+    const buttons = 
+    {
+      "reply_markup": {
+          "inline_keyboard": [
+          [
+            {
+                text: "+",
+                callback_data: "sug|" + String(suggestObject._id) + "|+"
+            },
+            {
+                text: "-",
+                callback_data: "sug|" + String(suggestObject._id) + "|-"
+            }
+          ]
+        ],
+      },
+    };
+
+    await bot.sendMessage(chat_id, "\"" + suggestObject.suggest_text + "\"" + 
+                     '\nAuthor: ' + suggestObject.author_name, buttons);
+  }
+
+  //second 
+  if (callbackLastIndex === undefined) callbackLastIndex = suggestArray.length;
+  const buttons = 
+  {
+    "reply_markup": {
+        "inline_keyboard": [
+        [
+          {
+              text: "\\/",
+              callback_data: "sug_last|" + String(callbackLastIndex)
+          }
+        ]
+      ],
+    },
+  };
+  bot.sendMessage(chat_id, 'Есчо?', buttons);
+}
+
+
+bot.onText(/\/checkSuggestions/, (msg) => {
+  if (checkIfAdmin(msg.from.id))
+  {
+    Suggest.getRangeOfEntities(0, 5)
+      .then((suggestions) => {
+        if(suggestions.length === 0) 
+          bot.sendMessage(msg.chat.id, 'Новых предложений нет =(');
+        else
+          sendSuggestionsKeyboard(suggestions, msg.chat.id);
+      })
+      .catch(err => {
+        botLogger('Error', err.message);
+    });
+  }
+});
 
 bot.onText(/\/timer ([0-9]+) (.+)/, (msg, match) => {
   const time = match[1];
