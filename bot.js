@@ -11,6 +11,7 @@ mongoose.connect(`mongodb+srv://bot:${config.db_password}@cluster1.hn9fy.mongodb
 
 const User = require('./user_db');
 const Suggest = require('./suggest_db');
+const Phrase = require('./phrase_db');
 const bot = new TelegramBot(config.token, {polling: true});
 
 
@@ -137,7 +138,7 @@ bot.on("callback_query", (callbackQuery) => {
         {
           Suggest.getEntityById(params[1])
             .then((suggestion) => {
-              //push text to DB
+              Phrase.push(suggestion.suggest_text).catch(err => {botLogger('Error', err.message);});
 
               const name = `[${String(suggestion.author_name)
                 .replace(/]/g,' ')
