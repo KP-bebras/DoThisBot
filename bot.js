@@ -9,7 +9,7 @@ mongoose.connect(`mongodb+srv://bot:${config.db_password}@cluster1.hn9fy.mongodb
     .catch(err => console.log("ERROR - Database connection is not established. -- bot.js 9", err));
 
 
-const User = require('./database');
+const User = require('./user_db');
 const Suggest = require('./suggest_db');
 const bot = new TelegramBot(config.token, {polling: true});
 
