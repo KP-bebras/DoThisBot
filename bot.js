@@ -104,9 +104,73 @@ bot.onText(/(.+)/, (msg, match) => {
   })
 });
 
+
+bot.on("callback_query", (callbackQuery) => {
+  bot.answerCallbackQuery(callbackQuery.id).then(() => {
+    const msg = callbackQuery.message;
+
+    //suggest block
+    if(callbackQuery.data.startsWith('sug'))
+    {
+      const params = callbackQuery.data.split('|');
+
+      if (params[0] === 'sug_last')
+      {
+        Suggest.getRangeOfEntities(Number(params[1]), 5)
+        .then((suggestions) => {
+          if (suggestions.length != 0)
+          {
+            sendSuggestionsKeyboard(suggestions, 
+                                    msg.chat.id, 
+                                    Number(params[1]) + 5);
+          }
+        })
+        .catch(err => {
+          botLogger('Error', err.message);
+        });
+        bot.deleteMessage(msg.chat.id, msg.message_id);
+      }
+
+      if(params[0] === 'sug')
+      {
+        if (params[2] === '+')
+        {
+          Suggest.getEntityById(params[1])
+            .then((suggestion) => {
+              //push text to DB
+              console.log(suggestion.suggest_text, " ", "одобрен");
+
+              const name = `[${String(suggestion.author_name)
+                .replace(/]/g,' ')
+                .replace(/\[/g,' ')}](tg://user?id=${suggestion.author_id})`;
+              const parse_mode = 'Markdown';
+
+              bot.sendMessage(suggestion.chat_id, "\"" + suggestion.suggest_text + "\"" +
+                                                 + " от " + name +" был одобрен.", {parse_mode});
+
+              Suggest.deleteEntityById(params[1]).catch(err => {botLogger('Error', err.message);});
+              bot.deleteMessage(msg.chat.id, msg.message_id);
+            })
+            .catch(err => {
+              botLogger('Error', err.message);
+            });
+        }
+        else
+        {
+          Suggest.deleteEntityById(params[1]);
+          bot.deleteMessage(msg.chat.id, msg.message_id);
+        }
+      }
+    }
+    //end og suggest block
+
+  });
+});
+
+
 bot.onText(/\/suggest (.+)/, (msg, match) => {
   const suggestion = match[1];
-  Suggest.push(suggestion, msg.from.id, msg.from.first_name)
+  Suggest.push(suggestion, msg.from.id, msg.from.first_name, msg.chat.id)
          .then(() => {
             bot.deleteMessage(msg.chat.id, msg.message_id);
 
@@ -122,34 +186,68 @@ bot.onText(/\/suggest (.+)/, (msg, match) => {
          });
 });
 
+/** Send to admin inline keyboard
+ * 
+ * @param {Array} suggestArray [array of suggest]
+ * @param {Number} chat_id [chat id]
+ * @returns {None}
+ */
+async function sendSuggestionsKeyboard(suggestArray, chat_id, callbackLastIndex)
+{
+  // main keyboard
+  for (let suggestObject of suggestArray)
+  {
+    const buttons = 
+    {
+      "reply_markup": {
+          "inline_keyboard": [
+          [
+            {
+                text: "+",
+                callback_data: "sug|" + String(suggestObject._id) + "|+"
+            },
+            {
+                text: "-",
+                callback_data: "sug|" + String(suggestObject._id) + "|-"
+            }
+          ]
+        ],
+      },
+    };
+
+    await bot.sendMessage(chat_id, "\"" + suggestObject.suggest_text + "\"" + 
+                     '\nAuthor: ' + suggestObject.author_name, buttons);
+  }
+
+  //second 
+  if (callbackLastIndex === undefined) callbackLastIndex = suggestArray.length;
+  const buttons = 
+  {
+    "reply_markup": {
+        "inline_keyboard": [
+        [
+          {
+              text: "\\/",
+              callback_data: "sug_last|" + String(callbackLastIndex)
+          }
+        ]
+      ],
+    },
+  };
+  bot.sendMessage(chat_id, 'Есчо?', buttons);
+}
+
+
 bot.onText(/\/checkSuggestions/, (msg) => {
   if (checkIfAdmin(msg.from.id))
   {
-    Suggest.getAllEntities()
+    Suggest.getRangeOfEntities(0, 5)
       .then((suggestions) => {
-
-        suggestions.forEach(suggestObject =>
-        {
-          const buttons = {
-            "reply_markup": {
-                "inline_keyboard": [
-                [
-                  {
-                      text: "+",
-                      callback_data: "+",
-                  },
-                  {
-                      text: "-",
-                      callback_data: "-",
-                  }
-                ]
-              ],
-            },
-          };
-
-          bot.sendMessage(msg.chat.id, suggestObject.suggest_text, buttons);
-        });
-    })
+        if(suggestions.length === 0) 
+          bot.sendMessage(msg.chat.id, 'Новых предложений нет =(');
+        else
+          sendSuggestionsKeyboard(suggestions, msg.chat.id);
+      })
       .catch(err => {
         botLogger('Error', err.message);
     });
