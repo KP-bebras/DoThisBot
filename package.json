@@ -1,6 +1,14 @@
 {
-  "name": "DoThisBot",
+  "name": "do-this-bot",
   "version": "1.0.0",
+  "description": "pizdato",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node ./bot.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "mongoose": "^5.10.3",
     "node-telegram-bot-api": "^0.50.0",
