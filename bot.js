@@ -138,15 +138,13 @@ bot.on("callback_query", (callbackQuery) => {
           Suggest.getEntityById(params[1])
             .then((suggestion) => {
               //push text to DB
-              console.log(suggestion.suggest_text, " ", "одобрен");
 
               const name = `[${String(suggestion.author_name)
                 .replace(/]/g,' ')
                 .replace(/\[/g,' ')}](tg://user?id=${suggestion.author_id})`;
               const parse_mode = 'Markdown';
 
-              bot.sendMessage(suggestion.chat_id, "\"" + suggestion.suggest_text + "\"" +
-                                                 + " от " + name +" был одобрен.", {parse_mode});
+              bot.sendMessage(suggestion.chat_id, `"${suggestion.suggest_text}" от ${name} был одобрен.`, {parse_mode});
 
               Suggest.deleteEntityById(params[1]).catch(err => {botLogger('Error', err.message);});
               bot.deleteMessage(msg.chat.id, msg.message_id);
@@ -166,7 +164,6 @@ bot.on("callback_query", (callbackQuery) => {
 
   });
 });
-
 
 bot.onText(/\/suggest (.+)/, (msg, match) => {
   const suggestion = match[1];
@@ -192,7 +189,7 @@ bot.onText(/\/suggest (.+)/, (msg, match) => {
  * @param {Number} chat_id [chat id]
  * @returns {None}
  */
-async function sendSuggestionsKeyboard(suggestArray, chat_id, callbackLastIndex)
+async function sendSuggestionsKeyboard(suggestArray, chat_id, callbackLastIndex, isFirst)
 {
   // main keyboard
   for (let suggestObject of suggestArray)
@@ -221,20 +218,23 @@ async function sendSuggestionsKeyboard(suggestArray, chat_id, callbackLastIndex)
 
   //second 
   if (callbackLastIndex === undefined) callbackLastIndex = suggestArray.length;
-  const buttons = 
+  if (!isFirst)
   {
-    "reply_markup": {
-        "inline_keyboard": [
-        [
-          {
-              text: "\\/",
-              callback_data: "sug_last|" + String(callbackLastIndex)
-          }
-        ]
-      ],
-    },
-  };
-  bot.sendMessage(chat_id, 'Есчо?', buttons);
+    const buttons = 
+    {
+      "reply_markup": {
+          "inline_keyboard": [
+          [
+            {
+                text: "\\/",
+                callback_data: "sug_last|" + String(callbackLastIndex)
+            }
+          ]
+        ],
+      },
+    };
+    bot.sendMessage(chat_id, 'Есчо?', buttons);
+  }
 }
 
 
@@ -246,7 +246,10 @@ bot.onText(/\/checkSuggestions/, (msg) => {
         if(suggestions.length === 0) 
           bot.sendMessage(msg.chat.id, 'Новых предложений нет =(');
         else
-          sendSuggestionsKeyboard(suggestions, msg.chat.id);
+        {
+          const isFirst = suggestions.length < 5;
+          sendSuggestionsKeyboard(suggestions, msg.chat.id, suggestions.length, isFirst);
+        }
       })
       .catch(err => {
         botLogger('Error', err.message);

@@ -4,7 +4,8 @@ const Schema = mongoose.Schema;
 const suggestSchema = new Schema({
     suggest_text: String,
     author_id: Number,
-    author_name: String
+    author_name: String,
+    chat_id: Number
 });
 const SuggestModel = mongoose.model("Suggest", suggestSchema);
 
@@ -51,7 +52,7 @@ class Suggest {
 
     static async getEntityById(id){
         try {
-            return await SuggestModel.find({_id : id});
+            return await SuggestModel.findOne({_id : id});
         }
         catch (err) {
             console.log("DATABASE ERROR: Suggest.getEntityById() failed -- ", 
