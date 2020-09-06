@@ -180,6 +180,15 @@ bot.on("callback_query", (callbackQuery) => {
   });
 });
 
+bot.onText(/\/info/, msg => {
+    const information = "***/remind*** <task> - напоминает выполнить какую-либо задачу, если ты пишешь сообщение в чат;\n" +
+        "***/stop*** - останавливает работу напоминалки;\n" +
+        "***/suggest*** <suggestion> - предложить вариант текста напоминалки. В текст можно добавлять флаги ${name} и ${task}.";
+    const parse_mode = 'Markdown';
+
+    bot.sendMessage(msg.chat.id, information, {parse_mode});
+})
+
 bot.onText(/\/suggest (.+)/, (msg, match) => {
   const suggestion = match[1];
   Suggest.push(suggestion, msg.from.id, msg.from.first_name, msg.chat.id)
